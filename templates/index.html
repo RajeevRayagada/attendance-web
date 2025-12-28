@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Attendance</title>
+</head>
+<body>
+  <h2>Attendance System</h2>
+
+  <video autoplay playsinline></video>
+  <br><br>
+
+  <input id="name" placeholder="Name (for registration)">
+  <br><br>
+
+  <button onclick="register()">Register Face</button>
+  <button onclick="mark()">Mark Attendance</button>
+
+  <canvas hidden></canvas>
+
+  <pre id="output"></pre>
+
+<script>
+const video = document.querySelector("video");
+const canvas = document.querySelector("canvas");
+const output = document.getElementById("output");
+
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => video.srcObject = stream);
+
+function captureBlob(callback) {
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext("2d").drawImage(video, 0, 0);
+  canvas.toBlob(callback, "image/jpeg");
+}
+
+function register() {
+  const name = document.getElementById("name").value;
+  if (!name) {
+    output.textContent = "Enter name first";
+    return;
+  }
+
+  captureBlob(blob => {
+    const fd = new FormData();
+    fd.append("name", name);
+    fd.append("image", blob);
+
+    fetch("/register", { method: "POST", body: fd })
+      .then(r => r.json())
+      .then(d => output.textContent = JSON.stringify(d, null, 2));
+  });
+}
+
+function mark() {
+  captureBlob(blob => {
+    const fd = new FormData();
+    fd.append("image", blob);
+
+    fetch("/mark", { method: "POST", body: fd })
+      .then(r => r.json())
+      .then(d => output.textContent = JSON.stringify(d, null, 2));
+  });
+}
+</script>
+</body>
+</html>

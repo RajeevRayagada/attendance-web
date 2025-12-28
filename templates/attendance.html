@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Attendance Records</title>
+</head>
+<body>
+  <h2>Attendance Records</h2>
+
+  <table border="1" cellpadding="8">
+    <tr>
+      <th>Name</th>
+      <th>Time</th>
+      <th>Date</th>
+    </tr>
+    {% for row in rows %}
+    <tr>
+      <td>{{ row[0] }}</td>
+      <td>{{ row[1] }}</td>
+      <td>{{ row[2] }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+</body>
+</html>
