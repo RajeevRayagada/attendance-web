@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect, url_for
 import face_recognition
 import numpy as np
 import os
@@ -35,6 +35,33 @@ def attendance():
                 rows.append(line.strip().split(","))
     return render_template("attendance.html", rows=rows)
 
+from flask import send_file
+
+@app.route("/download")
+def download():
+    if not os.path.exists(ATT_FILE):
+        return "No attendance yet", 404
+    return send_file(ATT_FILE, as_attachment=True)
+
+@app.route("/students")
+def students():
+    students = []
+    for file in os.listdir(DATASET_DIR):
+        if file.endswith(".npy"):
+            students.append(file.replace(".npy", ""))
+    return render_template("students.html", students=students)
+
+@app.route("/delete_student/<name>", methods=["POST"])
+def delete_student(name):
+    path = os.path.join(DATASET_DIR, f"{name}.npy")
+    if os.path.exists(path):
+        os.remove(path)
+
+    global KNOWN_ENCODINGS, KNOWN_NAMES
+    KNOWN_ENCODINGS, KNOWN_NAMES = load_known_faces()
+
+    return redirect(url_for("students"))
+
 @app.route("/register", methods=["POST"])
 def register():
     name = request.form.get("name")
@@ -43,13 +70,21 @@ def register():
     if not name or not file:
         return jsonify({"status": "error", "msg": "Missing data"})
 
+    path = os.path.join(DATASET_DIR, f"{name}.npy")
+
+    if os.path.exists(path):
+        return jsonify({
+            "status": "exists",
+            "msg": f"{name} is already registered"
+        })
+
     image = face_recognition.load_image_file(file)
     encs = face_recognition.face_encodings(image)
 
     if not encs:
         return jsonify({"status": "no_face"})
 
-    np.save(os.path.join(DATASET_DIR, f"{name}.npy"), encs[0])
+    np.save(path, encs[0])
 
     global KNOWN_ENCODINGS, KNOWN_NAMES
     KNOWN_ENCODINGS, KNOWN_NAMES = load_known_faces()

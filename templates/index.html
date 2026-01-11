@@ -1,67 +1,107 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <title>Attendance System</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Attendance</title>
+  <style>
+    body {
+      font-family: system-ui, Arial;
+      max-width: 420px;
+      margin: auto;
+      padding: 16px;
+      text-align: center;
+    }
+    video {
+      width: 100%;
+      border-radius: 12px;
+      margin-bottom: 10px;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      margin-top: 8px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+    .result {
+      margin-top: 12px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
 </head>
+
 <body>
   <h2>Attendance System</h2>
 
-  <video autoplay playsinline></video>
-  <br><br>
+  <video id="video" autoplay></video>
 
-  <input id="name" placeholder="Name (for registration)">
-  <br><br>
+  <input id="name" placeholder="Name (only for first-time register)" />
 
   <button onclick="register()">Register Face</button>
   <button onclick="mark()">Mark Attendance</button>
+  <button onclick="location.href='/attendance'">View Attendance</button>
+  <button onclick="location.href='/students'">Manage Students</button>
+  <button onclick="location.href='/download'">Download Attendance CSV</button>
 
-  <canvas hidden></canvas>
 
-  <pre id="output"></pre>
+
+  <div class="result" id="result"></div>
 
 <script>
-const video = document.querySelector("video");
-const canvas = document.querySelector("canvas");
-const output = document.getElementById("output");
+const video = document.getElementById("video");
 
 navigator.mediaDevices.getUserMedia({ video: true })
   .then(stream => video.srcObject = stream);
 
-function captureBlob(callback) {
+function captureBlob() {
+  const canvas = document.createElement("canvas");
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   canvas.getContext("2d").drawImage(video, 0, 0);
-  canvas.toBlob(callback, "image/jpeg");
+  return new Promise(resolve => canvas.toBlob(resolve, "image/jpeg"));
 }
 
-function register() {
+async function register() {
   const name = document.getElementById("name").value;
   if (!name) {
-    output.textContent = "Enter name first";
+    alert("Enter name only once while registering");
     return;
   }
 
-  captureBlob(blob => {
-    const fd = new FormData();
-    fd.append("name", name);
-    fd.append("image", blob);
+  const blob = await captureBlob();
+  const form = new FormData();
+  form.append("name", name);
+  form.append("image", blob);
 
-    fetch("/register", { method: "POST", body: fd })
-      .then(r => r.json())
-      .then(d => output.textContent = JSON.stringify(d, null, 2));
-  });
+  const res = await fetch("/register", { method: "POST", body: form });
+  const data = await res.json();
+
+  document.getElementById("result").innerText =
+    data.status === "registered"
+      ? "Registered: " + data.name
+      : "Registration failed";
 }
 
-function mark() {
-  captureBlob(blob => {
-    const fd = new FormData();
-    fd.append("image", blob);
+async function mark() {
+  document.getElementById("name").value = ""; // hide name usage
 
-    fetch("/mark", { method: "POST", body: fd })
-      .then(r => r.json())
-      .then(d => output.textContent = JSON.stringify(d, null, 2));
-  });
+  const blob = await captureBlob();
+  const form = new FormData();
+  form.append("image", blob);
+
+  const res = await fetch("/mark", { method: "POST", body: form });
+  const data = await res.json();
+
+  document.getElementById("result").innerText =
+    data.status === "marked"
+      ? "✅ Marked Present: " + data.name
+      : "❌ Face not recognized";
 }
 </script>
 </body>

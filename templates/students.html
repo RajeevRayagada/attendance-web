@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Students</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: system-ui, Arial;
+      max-width: 420px;
+      margin: auto;
+      padding: 16px;
+    }
+    h2 {
+      text-align: center;
+    }
+    .student {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      margin-bottom: 8px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    button {
+      padding: 8px 12px;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 6px;
+    }
+    a {
+      display: block;
+      text-align: center;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Registered Students</h2>
+
+  {% for student in students %}
+    <div class="student">
+      <span>{{ student }}</span>
+      <form method="POST" action="/delete_student/{{ student }}">
+        <button type="submit">Delete</button>
+      </form>
+    </div>
+  {% endfor %}
+
+  <a href="/">⬅ Back to Camera</a>
+</body>
+</html>
